@@ -1,0 +1,26 @@
+# Data from Neogen genotyping of C57BL/6J x C58L/6J F2 
+crosstype: f2
+geno: WT209_neogen_qtl2_genotypes.csv
+pheno: WT209_phenotypes.csv
+covar: WT209_covariates.csv
+sex:
+  covar: Sex
+  1: female
+  0: male
+alleles:
+  - A
+  - B
+genotypes:
+  AA: 1
+  AB: 2
+  BA: 2
+  BB: 3
+#x_chr: X
+gmap: SNP_map_to_qtl2_genomic.csv
+pmap: SNP_map_to_qtl2_physical.csv
+#cross_info:
+#  covar: parents
+#  JNJN: 0
+#  NJJN: 0
+#  JNNJ: 1
+#  NJNJ: 1

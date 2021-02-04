@@ -1,0 +1,75 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+```{r input}
+library(qtl2)
+library(ggplot2)
+library(tidyverse)
+wt209 <- read_cross2("input_data/WT209_qtl2_input.yaml")
+wt209$geno <- wt209$geno[c(1:19, "X")]
+wt209$gmap <- wt209$gmap[c(1:19, "X")]
+wt209$pmap <- wt209$pmap[c(1:19, "X")]
+map <- insert_pseudomarkers(wt209$gmap, step=1000000)
+for (n in names(map)) map[[n]] <- map[[n]]/1000000
+# Run QC metrics
+sexes <- data.frame(hetero=rowSums(wt209$geno$X==2), sex=wt209$covar[rownames(wt209$geno$X), "Sex"])
+ggplot(sexes, aes(sex, hetero, color=sex)) + geom_jitter(height=0)
+# Remove 4 males with hetero markers in X
+#wt209 <- wt209[rownames(sexes)[!(sexes$sex==1 & sexes$hetero>0)], ]
+af <- NULL
+for (chr in names(wt209$geno)){
+  af <- rbind(af, data.frame(chr=chr,
+                             A=colSums(wt209$geno[[chr]] == 1),
+                             H=colSums(wt209$geno[[chr]] == 2),
+                             B=colSums(wt209$geno[[chr]] == 3)))
+}
+af$ID <- 1:nrow(af)
+ggplot(af) + geom_point(aes(ID, A), color = "red") + geom_point(aes(ID, B), color="purple") + geom_point(aes(ID, H), color="black") + facet_grid(~chr, scales = "free")
+wt209 <- drop_markers(wt209, rownames(af)[(!af$chr %in% c("X")) & (af$H < 150 | af$A > 150 | af$B > 150)])
+summary(wt209)
+```
+
+```{r pheno}
+phenplot <- pivot_longer(as_tibble(wt209$pheno, rownames = "Animal_Name"), -Animal_Name, names_to = "phenotype", values_to = "value")
+phenplot <- left_join(phenplot, as_tibble(wt209$covar, rownames = "Animal_Name"), by = "Animal_Name")
+for (p in unique(phenplot$phenotype)){
+  print(filter(phenplot, phenotype == p) %>% ggplot(aes(value, fill=Sex)) + geom_histogram(bins = 50) + ggtitle(p))
+}
+```
+```{r qtl2}
+col <- c("slateblue", "violetred", "green3")
+Xcovar <- get_x_covar(wt209)
+pr <- calc_genoprob(wt209, map, error_prob = 0.002)
+apr <- genoprob_to_alleleprob(pr)
+out_g <- scan1(pr, wt209$pheno, addcovar = model.matrix(~Sex, wt209$covar) , Xcovar = Xcovar)
+operm <- scan1perm(pr, wt209$pheno, n_perm = 1000)
+for (i in unique(find_peaks(out_g, threshold=3, map=map)$lodindex)) {
+    thr = summary(operm)[i]
+    thr2 = summary(operm, alpha=0.1)[i]
+    ymx = max(thr, max(out_g[,i]))
+    plot(out_g, map, lodcolumn = i, main = paste(colnames(wt209$pheno)[i], sep =" "), ylim=c(0, ymx*1.1))
+    abline(h = thr, col = "red", lwd = 2)
+    abline(h = thr2, col = "purple", lwd = 1)
+
+    # Plot the effect if the LOD is higher than the p-value
+    if (max(out_g[,i]) > 100*thr2){
+      peaks <- find_peaks(out_g, map, threshold=thr2, drop=1.5)
+      for (c in peaks$chr){
+        c2eff <- scan1coef(pr[,as.character(c)], wt209$pheno[,i])
+        plot(c2eff, map[as.character(c)], columns=1:3, col=col, main=paste(colnames(wt209$pheno)[i], sep =" "))
+        last_coef <- unclass(c2eff)[nrow(c2eff),] # pull out last coefficients
+        for(j in seq(along=last_coef))
+            axis(side=4, at=last_coef[j], names(last_coef)[j], tick=FALSE, col.axis=col[j])
+        g2 <- maxmarg(pr, map, chr=as.character(c), pos=peaks$pos[peaks$chr==c], return_char=TRUE)
+        plot_pxg(g2, wt209$pheno[,i], ylab=paste(colnames(wt209$pheno)[i], sep =" "))
+        
+      }
+    }
+   # dev.off()
+  }
+
+```
