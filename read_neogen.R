@@ -1,9 +1,13 @@
-read_neogen <- function(inputfile, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), B6N=c("C57L/J_A", "C57L/J_B")){
+read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), B6N=c("C57L/J_A", "C57L/J_B")){
   # Read Karl Broman analysis result with unique and mapped markers, save a list of the unique only
   kb <- read.csv(url("https://raw.githubusercontent.com/kbroman/MUGAarrays/master/UWisc/mini_uwisc_v2.csv"))
   kblist <- kb$marker[kb$unique & (!kb$unmapped)]
   # Read the Neogen input file and write the genotypes matrix into the output csv file
-  tbl <- read.delim(inputfile, skip = 10, header = F)
+  tbl <- NULL
+  for (inputfile in inputfiles){
+    tbl1 <- read.delim(inputfile, skip = 10, header = F)
+    tbl <- rbind(tbl, tbl1)
+  }
   w3 <- reshape(tbl[,1:3], v.names="V3", idvar = "V1", timevar="V2", direction="wide")
   rownames(w3) <- w3$V1
   w3 <- w3[,-1]
