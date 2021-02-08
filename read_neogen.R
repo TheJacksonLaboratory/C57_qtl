@@ -1,4 +1,4 @@
-read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), B6N=c("C57L/J_A", "C57L/J_B"), name1="C57", name2="BALB){
+read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), B6N=c("C57L/J_A", "C57L/J_B"), name1="C57", name2="BALB"){
   # Read Karl Broman analysis result with unique and mapped markers, save a list of the unique only
   kb <- read.csv(url("https://raw.githubusercontent.com/kbroman/MUGAarrays/master/UWisc/mini_uwisc_v2.csv"))
   kblist <- kb$marker[kb$unique & (!kb$unmapped)]
