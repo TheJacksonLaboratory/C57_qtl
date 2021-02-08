@@ -1,4 +1,4 @@
-read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), B6N=c("C57L/J_A", "C57L/J_B")){
+read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), B6N=c("C57L/J_A", "C57L/J_B"), name1="C57", name2="BALB){
   # Read Karl Broman analysis result with unique and mapped markers, save a list of the unique only
   kb <- read.csv(url("https://raw.githubusercontent.com/kbroman/MUGAarrays/master/UWisc/mini_uwisc_v2.csv"))
   kblist <- kb$marker[kb$unique & (!kb$unmapped)]
@@ -44,6 +44,6 @@ read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), 
   d3 <- d3[, intersect(colnames(d3), kblist)]
   # Separate the founders and write them in the first two rows followed by the rest
   dout <- rbind(d3[B6J[1],,drop=F], d3[B6N[1],,drop=F], d3[!rownames(d3) %in% c(B6N, B6J),])
-  rownames(dout) <- c("C57BL_6J", "C57L_6J", rownames(dout)[3:nrow(dout)])
+  rownames(dout) <- c(name1, name2, rownames(dout)[3:nrow(dout)])
   write.csv(dout, file=outfile)
 } 
