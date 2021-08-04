@@ -5,26 +5,26 @@ read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), 
   # Read the Neogen input file and write the genotypes matrix into the output csv file
   tbl <- NULL
   for (inputfile in inputfiles){
-    tbl1 <- read.delim(inputfile, skip = 10, header = F)
+    tbl1 <- read.delim(inputfile, skip = 1, header = F)
     tbl <- rbind(tbl, tbl1)
   }
-  w3 <- reshape(tbl[,1:3], v.names="V3", idvar = "V1", timevar="V2", direction="wide")
+  w3 <- reshape(tbl[,c(1:2,4)], v.names="V4", idvar = "V1", timevar="V2", direction="wide")
   rownames(w3) <- w3$V1
   w3 <- w3[,-1]
-  colnames(w3) <- gsub("^V3.", "", colnames(w3))
-  w3 <- t(w3)
-  w4 <- reshape(tbl[,c(1:2, 4)], v.names="V4", idvar = "V1", timevar="V2", direction="wide")
+  colnames(w3) <- gsub("^V4.", "", colnames(w3))
+  #w3 <- t(w3)
+  w4 <- reshape(tbl[,c(1:2, 5)], v.names="V5", idvar = "V1", timevar="V2", direction="wide")
   rownames(w4) <- w4$V1
   w4 <- w4[,-1]
-  colnames(w4) <- gsub("^V4.", "", colnames(w4))
-  w4 <- t(w4)
+  colnames(w4) <- gsub("^V5.", "", colnames(w4))
+  #w4 <- t(w4)
   
   # Find the B6J and B6N consensus. If one allele is different remove the marker
   # If B6J==B6N remove the marker
-  keepr <- apply(w3[B6J,], 2, function(col) length(unique(col)) == 1) & 
-    apply(w4[B6J,], 2, function(col) length(unique(col)) == 1) &
-    apply(w3[B6N,], 2, function(col) length(unique(col)) == 1) &
-    apply(w4[B6N,], 2, function(col) length(unique(col)) == 1) &
+  keepr <- apply(w3[B6J, ,drop=F], 2, function(col) length(unique(col)) == 1) & 
+    apply(w4[B6J, ,drop=F], 2, function(col) length(unique(col)) == 1) &
+    apply(w3[B6N, ,drop=F], 2, function(col) length(unique(col)) == 1) &
+    apply(w4[B6N, ,drop=F], 2, function(col) length(unique(col)) == 1) &
     w3[B6J[1],] == w4[B6J[1],] &
     w3[B6N[1],] == w4[B6N[1],] &
     w3[B6J[1],] != w3[B6N[1],]
@@ -32,10 +32,10 @@ read_neogen <- function(inputfiles, outfile, B6J=c("C57BL/6J_A", "C57BL/6J_B"), 
   # Set the allele names to A and B for B6J and B6N
   w3 <- w3[, keepr]
   w4 <- w4[, keepr]
-  d3 <- w3 == rep(w3[B6J[1],],each=nrow(w3))
+  d3 <- w3 == w3[rep(B6J[1],nrow(w3)), ]
   d3[d3==TRUE] = "A"
   d3[d3==FALSE] = "B"
-  d4 <- w4 == rep(w4[B6J[1],],each=nrow(w4))
+  d4 <- w4 == w4[rep(B6J[1],nrow(w4)), ]
   d4[d4==TRUE] = "A"
   d4[d4==FALSE] = "B"
   
